@@ -3,6 +3,8 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 
 export default function App() {
+  const [lastToken, setLastToken] = useState<string | null>(null);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800 px-6 py-4">
@@ -24,15 +26,20 @@ export default function App() {
           API token management component for Convex — create, validate, rotate,
           and revoke tokens in real-time.
         </p>
-        <CreateToken />
+        <CreateToken onCreated={setLastToken} />
         <ValidateToken />
+        <RotateToken lastToken={lastToken} onRotated={setLastToken} />
         <TokenList />
       </main>
     </div>
   );
 }
 
-function CreateToken() {
+function CreateToken({
+  onCreated,
+}: {
+  onCreated: (token: string) => void;
+}) {
   const [name, setName] = useState("");
   const [days, setDays] = useState("");
   const [result, setResult] = useState<{
@@ -48,6 +55,7 @@ function CreateToken() {
       expiresInDays: days ? Number(days) : undefined,
     });
     setResult(res);
+    onCreated(res.token);
     setName("");
     setDays("");
   };
@@ -156,6 +164,87 @@ function ValidateToken() {
   );
 }
 
+function RotateToken({
+  lastToken,
+  onRotated,
+}: {
+  lastToken: string | null;
+  onRotated: (token: string) => void;
+}) {
+  const [token, setToken] = useState("");
+  const [result, setResult] = useState<{
+    ok: boolean;
+    token?: string;
+    tokenPrefix?: string;
+    reason?: string;
+  } | null>(null);
+  const rotate = useMutation(api.tokens.rotate);
+
+  const handleRotate = async () => {
+    const t = token.trim() || lastToken;
+    if (!t) return;
+    const res = await rotate({ token: t });
+    setResult(res);
+    if (res.ok && res.token) {
+      onRotated(res.token);
+      setToken("");
+    }
+  };
+
+  return (
+    <section className="bg-slate-900 rounded-lg p-6 border border-slate-800">
+      <h2 className="text-lg font-semibold mb-4">Rotate Token</h2>
+      <p className="text-xs text-slate-500 mb-3">
+        Revokes the old token and issues a new one with the same metadata and permissions.
+      </p>
+      <div className="flex gap-3 mb-4">
+        <input
+          type="text"
+          placeholder={lastToken ? `Using last created token (${lastToken.slice(0, 10)}...)` : "Paste token to rotate (sk_...)"}
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleRotate()}
+          className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"
+        />
+        <button
+          onClick={handleRotate}
+          disabled={!token.trim() && !lastToken}
+          className="bg-amber-600 hover:bg-amber-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-4 py-2 rounded text-sm font-medium transition"
+        >
+          Rotate
+        </button>
+      </div>
+      {result && (
+        <div
+          className={`rounded p-4 border ${
+            result.ok
+              ? "bg-amber-950 border-amber-800"
+              : "bg-red-950 border-red-800"
+          }`}
+        >
+          {result.ok ? (
+            <>
+              <p className="text-xs text-amber-400 mb-1 font-medium">
+                Token rotated — old token revoked, here's your new one:
+              </p>
+              <code className="text-sm font-mono text-white break-all select-all">
+                {result.token}
+              </code>
+              <p className="text-xs text-slate-500 mt-2">
+                New prefix: {result.tokenPrefix}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm font-medium text-red-400">
+              Rotation failed — {result.reason}
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function TokenList() {
   const tokens = useQuery(api.tokens.list);
   const revoke = useMutation(api.tokens.revoke);
@@ -201,6 +290,11 @@ function TokenList() {
                   {t.revoked && (
                     <span className="text-xs bg-red-900 text-red-300 px-1.5 py-0.5 rounded">
                       revoked
+                    </span>
+                  )}
+                  {t.replacedBy && (
+                    <span className="text-xs bg-amber-900 text-amber-300 px-1.5 py-0.5 rounded">
+                      rotated
                     </span>
                   )}
                 </div>

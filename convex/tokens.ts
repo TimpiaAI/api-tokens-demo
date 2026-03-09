@@ -1,5 +1,5 @@
 import { ApiTokens } from "convex-api-tokens";
-import { components } from "./_generated/server.js";
+import { components } from "./_generated/api.js";
 import { mutation, query } from "./_generated/server.js";
 import { v } from "convex/values";
 

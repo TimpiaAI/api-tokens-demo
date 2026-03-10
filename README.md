@@ -1,5 +1,7 @@
 # Welcome to your Convex + React (Vite) app
 
+[![Convex Component](https://www.convex.dev/components/badge/convex-api-tokens)](https://www.convex.dev/components/convex-api-tokens)
+
 This is a [Convex](https://convex.dev/) project created with [`npm create convex`](https://www.npmjs.com/package/create-convex).
 
 After the initial setup (<2 minutes) you'll have a working full-stack app using:

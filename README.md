@@ -93,6 +93,8 @@ export const listTokens = query({
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Visit-blue?style=for-the-badge)](https://api-tokens-demo.vercel.app)
 
+[![API Tokens Demo](./screenshot.png)](https://api-tokens-demo.vercel.app)
+
 [See the demo in action →](https://api-tokens-demo.vercel.app)
 
 ## License
